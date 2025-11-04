@@ -6,7 +6,288 @@
     <title>订单管理 - 水果团购</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        .orders-list {<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单管理 - 水果团购</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .banner {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .admin-actions button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .admin-actions button:hover {
+            background: #2980b9;
+        }
+
         .orders-list {
+            margin-top: 20px;
+        }
+
+        .order-item {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .order-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d4edda; color: #155724; }
+
+        .order-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .order-details div {
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📊 订单管理系统</h1>
+            <p>水果社区团购 - 管理员视图</p>
+        </header>
+
+        <div class="banner">
+            <h2>今日订单汇总</h2>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalOrders">--</div>
+                <div class="stat-label">总订单数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingOrders">--</div>
+                <div class="stat-label">待处理订单</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayOrders">--</div>
+                <div class="stat-label">今日订单</div>
+            </div>
+        </div>
+
+        <div class="admin-actions">
+            <button onclick="refreshOrders()">🔄 刷新订单</button>
+            <button onclick="exportOrders()">📊 导出数据</button>
+            <button id="githubLinkBtn">🔧 管理订单</button>
+            <a href="index.html" style="text-decoration: none;"><button>🏠 返回首页</button></a>
+        </div>
+
+        <div class="orders-list" id="ordersList">
+            <!-- 订单将通过JavaScript动态加载 -->
+            <p>正在加载订单数据...</p>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">返回水果团购首页</a>
+        </div>
+    </div>
+
+    <script>
+        // 配置信息 - 替换为你的GitHub用户名和仓库名
+        const GITHUB_USERNAME = 'YOUR_USERNAME';  // 替换为你的GitHub用户名
+        const GITHUB_REPO = 'fruit-orders';       // 替换为你的订单仓库名
+        
+        // 设置GitHub链接按钮
+        document.getElementById('githubLinkBtn').addEventListener('click', function() {
+            window.open(`https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/issues`, '_blank');
+        });
+
+        // 从GitHub Issues获取订单数据
+        async function loadOrders() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/issues?labels=fruit-order&state=all`
+                );
+                
+                if (!response.ok) throw new Error('获取订单失败');
+                
+                const issues = await response.json();
+                displayOrders(issues);
+                updateStats(issues);
+                
+            } catch (error) {
+                document.getElementById('ordersList').innerHTML = 
+                    `<p>无法加载订单数据，请直接访问 <a href="https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/issues" target="_blank">GitHub Issues页面</a></p>`;
+            }
+        }
+
+        function displayOrders(orders) {
+            const container = document.getElementById('ordersList');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p>暂无订单</p>';
+                return;
+            }
+
+            // 按创建时间降序排列
+            orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            container.innerHTML = orders.map(order => {
+                const isOpen = order.state === 'open';
+                const createdDate = new Date(order.created_at).toLocaleDateString('zh-CN');
+                const isToday = new Date(order.created_at).toDateString() === new Date().toDateString();
+                
+                return `
+                <div class="order-item">
+                    <div class="order-header">
+                        <strong>${order.title}</strong>
+                        <span class="order-status ${isOpen ? 'status-pending' : 'status-completed'}">
+                            ${isOpen ? '待处理' : '已完成'}
+                        </span>
+                    </div>
+                    <div>下单时间: ${new Date(order.created_at).toLocaleString('zh-CN')} ${isToday ? '🆕' : ''}</div>
+                    <div class="order-details">
+                        <div><a href="${order.html_url}" target="_blank">查看详情</a></div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats(orders) {
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(order => order.state === 'open').length;
+            
+            // 计算今日订单
+            const today = new Date().toDateString();
+            const todayOrders = orders.filter(order => 
+                new Date(order.created_at).toDateString() === today
+            ).length;
+            
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('todayOrders').textContent = todayOrders;
+        }
+
+        function refreshOrders() {
+            loadOrders();
+        }
+
+        function exportOrders() {
+            alert('导出功能需要后端支持，当前版本请直接使用GitHub Issues的导出功能');
+        }
+
+        // 页面加载时获取订单
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>
             margin-top: 20px;
         }
         .order-item {
